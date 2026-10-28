@@ -5,10 +5,12 @@ import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { Preloader } from "@/components/layout/Preloader";
 import { WhatsAppFab } from "@/components/layout/WhatsAppFab";
+import { PerfProbe } from "@/components/providers/PerfProbe";
 import { SiteProvider } from "@/components/providers/SiteProvider";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import { Cursor, ScrollProgress } from "@/components/ui/Effects";
 import { seed } from "@/data";
+import { LITE_SCRIPT } from "@/lib/lite-script";
 import "./globals.css";
 
 const display = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage", display: "swap" });
@@ -39,10 +41,15 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${sans.variable}`}>
+    // LITE_SCRIPT may add the "lite" class before hydration.
+    <html lang="en" className={`${display.variable} ${sans.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: LITE_SCRIPT }} />
+      </head>
       <body>
         <SiteProvider initial={seed}>
           <Preloader />
+          <PerfProbe />
           <SmoothScroll />
           <ScrollProgress />
           <Cursor />

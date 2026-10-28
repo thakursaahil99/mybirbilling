@@ -95,6 +95,23 @@ html.lenis, html.lenis body { height: auto; }
 .lenis.lenis-smooth { scroll-behavior: auto !important; }
 .lenis.lenis-stopped { overflow: hidden; }
 
+/* Lite mode for low-end devices (see lib/perf.ts): drop GPU-heavy effects. */
+html.lite *,
+html.lite *::before,
+html.lite *::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+html.lite .glass { background-color: rgb(10 15 36 / 0.55); }
+html.lite .grain::after { display: none; }
+/* Large decorative glow blobs (blur-[120px], blur-2xl, ...) */
+html.lite [class*="blur-[1"],
+html.lite [class*="blur-2xl"],
+html.lite [class*="blur-3xl"] { display: none; }
+html.lite .animate-float,
+html.lite .animate-spin-slow,
+html.lite .animate-ping { animation: none; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

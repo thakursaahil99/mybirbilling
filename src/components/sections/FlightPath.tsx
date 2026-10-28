@@ -17,15 +17,15 @@ const stops = [
 export function FlightPath() {
   const section = useRef<HTMLElement>(null);
   const path = useRef<SVGPathElement>(null);
+  const glider = useRef<SVGGElement>(null);
+  const altText = useRef<HTMLSpanElement>(null);
   const [len, setLen] = useState(1);
-  const [pos, setPos] = useState({ x: 150, y: 150, angle: 0 });
   const [active, setActive] = useState(0);
 
   const { scrollYProgress } = useScroll({ target: section, offset: ["start start", "end end"] });
   const progress = useSpring(scrollYProgress, { stiffness: 90, damping: 25 });
   const dash = useTransform(progress, (p) => len * (1 - p));
   const altitude = useTransform(progress, [0, 0.35, 1], [2400, 2700, 1400]);
-  const [alt, setAlt] = useState(2400);
 
   // On portrait phones show the whole route instead of cropping its ends.
   const [narrow, setNarrow] = useState(false);
@@ -38,16 +38,21 @@ export function FlightPath() {
     return () => mq.removeEventListener("change", update);
   }, []);
 
+  // Glider and altimeter are written straight to the DOM: they change every
+  // scroll frame, and re-rendering the whole section per frame lags slow CPUs.
   useMotionValueEvent(progress, "change", (p) => {
     const el = path.current;
-    if (!el) return;
+    if (!el || !glider.current) return;
     const d = Math.min(len, Math.max(0, p * len));
     const a = el.getPointAtLength(d);
     const b = el.getPointAtLength(Math.min(len, d + 2));
-    setPos({ x: a.x, y: a.y, angle: (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI });
+    const angle = (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI;
+    glider.current.setAttribute("transform", `translate(${a.x} ${a.y}) rotate(${angle * 0.35})`);
     setActive(stops.reduce((acc, s, i) => (p >= s.at - 0.02 ? i : acc), 0));
   });
-  useMotionValueEvent(altitude, "change", (v) => setAlt(Math.round(v / 10) * 10));
+  useMotionValueEvent(altitude, "change", (v) => {
+    if (altText.current) altText.current.textContent = `${Math.round(v / 10) * 10}m`;
+  });
 
   return (
     <section ref={section} className="relative h-[320vh] bg-ink text-white">
@@ -97,7 +102,7 @@ export function FlightPath() {
             <circle cx="1250" cy="470" r="22" fill="none" stroke="#fff" strokeOpacity=".4" strokeWidth="2" />
 
             {/* Glider */}
-            <g transform={`translate(${pos.x} ${pos.y}) rotate(${pos.angle * 0.35})`}>
+            <g ref={glider} transform="translate(150 150)">
               <g transform="translate(-30 -52)">
                 <path d="M2 18C16 2 44 2 58 18c-6-4-12-5-20-6-4 0-12 0-16 0-8 1-14 2-20 6z" fill="#f2762e" />
                 <path d="M4 18 30 44M20 12l10 32M40 12 30 44M56 18 30 44" stroke="#fff" strokeWidth=".8" opacity=".8" />
@@ -109,7 +114,9 @@ export function FlightPath() {
           {/* Live altimeter */}
           <div className="glass absolute bottom-4 right-4 rounded-2xl px-4 py-3 sm:right-8">
             <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Altitude</p>
-            <p className="font-display text-2xl font-black tabular-nums sm:text-3xl">{alt}m</p>
+            <p className="font-display text-2xl font-black tabular-nums sm:text-3xl">
+              <span ref={altText}>2400m</span>
+            </p>
           </div>
         </div>
 

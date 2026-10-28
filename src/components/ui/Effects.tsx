@@ -3,6 +3,7 @@
 import { motion, useMotionValue, useScroll, useSpring, useTransform } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useLite } from "@/lib/perf";
 
 /** Thin sunset bar at the top showing page scroll progress. */
 export function ScrollProgress() {
@@ -21,9 +22,10 @@ export function Cursor() {
   const rx = useSpring(x, { stiffness: 300, damping: 30, mass: 0.5 });
   const ry = useSpring(y, { stiffness: 300, damping: 30, mass: 0.5 });
   const pathname = usePathname();
+  const lite = useLite();
 
   useEffect(() => {
-    if (!window.matchMedia("(pointer: fine)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (lite || !window.matchMedia("(pointer: fine)").matches || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     setEnabled(true);
     document.documentElement.classList.add("has-cursor");
     const move = (e: PointerEvent) => {
@@ -38,14 +40,14 @@ export function Cursor() {
       window.removeEventListener("pointermove", move);
       document.documentElement.classList.remove("has-cursor");
     };
-  }, [x, y]);
+  }, [x, y, lite]);
 
   useEffect(() => {
     setHovering(false);
     setLabel("");
   }, [pathname]);
 
-  if (!enabled) return null;
+  if (!enabled || lite) return null;
   return (
     <>
       <motion.div
@@ -72,6 +74,7 @@ export function Magnetic({ children, strength = 0.35, className }: { children: R
   const sx = useSpring(x, { stiffness: 200, damping: 15 });
   const sy = useSpring(y, { stiffness: 200, damping: 15 });
 
+  if (useLite()) return <div className={className ?? "inline-block"}>{children}</div>;
   return (
     <motion.div
       ref={ref}
@@ -104,6 +107,7 @@ export function Tilt({ children, className, max = 10 }: { children: React.ReactN
   const glareY = useTransform(py, [0, 1], ["0%", "100%"]);
   const glare = useTransform([glareX, glareY], ([gx, gy]) => `radial-gradient(circle at ${gx} ${gy}, rgba(255,255,255,0.25), transparent 50%)`);
 
+  if (useLite()) return <div className={className}>{children}</div>;
   return (
     <motion.div
       ref={ref}
